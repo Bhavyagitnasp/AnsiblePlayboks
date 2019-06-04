@@ -1,0 +1,30 @@
+---
+# tasks file for webserver
+- hosts: webserver
+  tasks:
+    - name: install common tools
+      package:
+        name: "{{ item }}"
+        state: latest
+      loop: "{{ basic_yum_installs }}"
+      become: true
+
+    - name: upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+      become: true
+
+    - name: copying index file in the new server
+      template:
+        src: "{{ webserver_index_file }}"
+        dest: /usr/share/nginx/html/index.html
+        mode: 0644
+      loop:
+      become: true
+
+    - name: Start service nginx, if not started and enable it
+      service:
+        name: "{{ webserver_package }}"
+        state: "{{ webserver_service_state }}"
+      become: true

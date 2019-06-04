@@ -1,0 +1,7 @@
+---
+# defaults file for webserver
+webserver_index_file: ['index.html.j2']
+webserver_package: ['nginx']
+webserver_service_state: ['started']
+
+basic_yum_installs: ['bind-utils', 'net-tools', 'vim', 'wget', 'epel-release', 'nginx-1.12.2-2.el7']
