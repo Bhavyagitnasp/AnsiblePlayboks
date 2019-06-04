@@ -1,0 +1,39 @@
+---
+- hosts: all
+  vars:
+     username: ['nsmeds', 'bsharma']
+  tasks:
+    - name: add several users
+      user:
+          name: "{{ item }}"
+          shell: /bin/bash
+          group: wheel
+      loop: "{{ username }}"
+      become: true
+
+    - file:
+        path: "/home/{{ item }}"
+        owner: "{{ item }}"
+        group: wheel
+        mode: 0750
+      loop: "{{ username }}"
+      become: true
+
+
+    - name: Set authorized key taken from file
+      authorized_key:
+        user: "{{ item }}"
+        state: present
+        key: "{{ lookup('file', '{{ item }}.pub')}}"
+      loop: "{{ username }}"
+      become: true
+
+    - name: Use lineinfile module to allow your user to perform passwordless sudo
+      lineinfile:
+        path: "/etc/sudoers.d/{{ item }}"
+        state: present
+        create: yes
+        line: "{{ item }} ALL=(root) NOPASSWD: ALL"
+        validate: '/usr/sbin/visudo -cf %s'
+      loop: "{{ username }}"
+      become: true
