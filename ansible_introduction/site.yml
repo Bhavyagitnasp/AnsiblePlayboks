@@ -1,0 +1,71 @@
+---
+- hosts: all
+  tasks:
+    - name: install common tools
+      package:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - bind-utils
+        - net-tools
+        - vim
+        - wget
+        - epel-release
+        - nginx-1.12.2-2.el7
+      become: true
+
+    - name: Add the user 'bsharma' with a specific uid and a primary group of 'admin'
+      user:
+          name: bsharma
+          comment: Bhavya Sharma
+          shell: /bin/bash
+          uid: 1040
+          group: wheel
+      become: true
+
+      # module to secure your home directory (set to mode 0750).
+    - file:
+         path: /home/bsharma
+         owner: bsharma
+         group: wheel
+         mode: 0750
+      become: true
+
+
+    - name: Set authorized key taken from file
+      authorized_key:
+         user: bsharma
+         state: present
+         key: "{{ lookup('file', '/home/bsharma/.ssh/id_rsa.pub') }}"
+      become: true
+
+    - name: Use lineinfile module to allow your user to perform passwordless sudo
+      lineinfile:
+         path: /etc/sudoers.d/bsharma
+         state: present
+         create: yes
+         regexp: '^bsharma ALL='
+         line: 'bsharma ALL=(root) NOPASSWD: ALL'
+         validate: '/usr/sbin/visudo -cf %s'
+      become: true
+
+    - name: upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+      become: true
+
+    - name: example copying file with owner and permissions
+      copy:
+        src: /home/bsharma/configurationmanagement/bhavya-repository/ansible_introduction/files/index.html
+        dest: /usr/share/nginx/html/index.html
+        owner: bsharma
+        group: root
+        mode: 0644
+      become: true
+
+    - name: Start service nginx, if not started and enable it
+      service:
+        name: nginx
+        state: started
+      become: true
